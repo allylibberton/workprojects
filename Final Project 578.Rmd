@@ -1,0 +1,281 @@
+---
+title: "Final Project 578"
+author: "Allyson Libberton"
+date: "2022-12-06"
+output: pdf_document
+---
+
+```{r ref.label=knitr::all_labels(),echo=TRUE,eval=FALSE}
+```
+
+```{r}
+library(tidyverse)
+library(mgcv)
+library(rpart)
+library(rpart.plot)
+```
+
+# Introduction 
+I will be studying this spotify dataset of 114000 songs. I am going to learn how 
+my variables relate to each other and my response variable - the actual song. 
+From that information I will then study the songs relations to different songs 
+based on the variables in the dataset.
+
+I chose this because I think it would be interesting to build an model that picks songs to recommend
+to users. I recently saw a job application at spotify for a data analyst so 
+I think this would be a great project to submit. I also just think it would be 
+fun to put in a bunch of songs I enjoy and see if I can find similar ones I like
+since I've never agreed with the current spotify algorithm. $ \\$
+
+The current dataset I've found has 21 variables; X (just labeling the songs numerically), track_id (this is specific to spotify I'm not sure if this will be useful to me), artists, album_name, track_name, popularity (larger number is more popular), duration_ms, explicit, danceability,
+energy, key, loudness, mode, speechiness, acousticness, instrumentalness, valence (positiveness of the song),
+liveness, tempo, time_signature, and track_genre. I'm going to begin by taking out track_genre
+since it is not accurate to the actual genre of the song. I also will change key, explicit, mode,
+and time_signature to factors. The only variable I did not order was explicit 
+since it only contained true or false. As of right now the "X" variable is 
+staying in the dataset since I'm unsure if it will be helpful or not. 
+
+# Data Evaluation
+
+The variables in the dataset consisted of 22 variables. The first two which we did not end up using because We don’t have accesses to the Spotify database were X with tracks the number of songs starting at zero and the unique Spotify ID for the track. Artists were the artists' names who performed the track. If there is more than one artist, they are separated by a “;”. The album name describes which album the song appears in. Track name is the name of the song. Popularity is the popularity of the song. “The popularity of a track is a value between 0 and 100, with 100 being the most popular. The popularity is calculated by algorithm and is based, in the most part, on the total number of plays the track has had and how recent those plays are. Generally speaking, songs that are being played a lot now will have a higher popularity than songs that were played a lot in the past. Duplicate tracks (e.g. the same track from a single and an album) are rated independently. Artist and album popularity is derived mathematically from track popularity.” Duration_ms is the duration of the song in milliseconds. Explicit describes where the song has explicit language (in this dataset only 9% of it was TRUE). Danceability describes how suitable a track is for dancing based on a combination of musical elements including tempo, rhythm stability, beat strength, and overall regularity and no equations were provided from the author. A value of 0.0 is least danceable and 1.0 is most danceable. Energy is a measure from 0.0 to 1.0 and represents a perceptual measure of intensity and activity. Typically, energetic tracks feel fast, loud, and noisy. If no key was detected, the value is -1. Major is represented by 1 and minor is 0. Speechiness detects the number of spoken words in a song. The more exclusively speech-like the recording the closer to 1.0 the attribute value. Values above 0.66 describe tracks that are probably made entirely of spoken words. Values between 0.33 and 0.66 describe tracks that may contain both music and speech, either in sections or layered, including such cases as rap music. Values below 0.33 most likely represent music and other non-speech-like tracks. Acoustic describes a confidence measure from 0.0 to 1.0 of whether the track is acoustic. 1.0 represents high confidence the track is acoustic. Instrumentalness predicts whether a track contains no vocals. "Ooh" and "aah" sounds are treated as instrumental in this context. Rap or spoken word tracks are clearly "vocal". The closer the instrumentalness value is to 1.0, the greater likelihood the track contains no vocal content. Liveness detects the presence of an audience in the recording. Higher liveness values represent an increased probability that the track was performed live. A value above 0.8 provides strong likelihood that the track is live. Valence is a measure from 0.0 to 1.0 describing the musical positiveness conveyed by a track. Tracks with high valence sound more positive (e.g. happy, cheerful, euphoric), while tracks with low valence sound more negative (e.g. sad, depressed, angry). Tempo estimates the beats per minute (BPM). In musical terminology, tempo is the speed or pace of a given piece and derives directly from the average beat duration. The time signature (meter) is a notational convention to specify how many beats are in each bar (or measure). The time signature ranges from 3 to 7 indicating time signatures of 3/4, to 7/4. We did take out genre immediately since it was not accurate. $\\$
+
+Data cleaning consisted of taking out genre, turning explicit into an integer instead of character. Album name, artist name changed to album and names respectively and were changed to factors. The goal was to group them together and take out spaces and other artists on the track. We then took all the data into a new data set called dataset2 so that we could only predict on popularity, duration_ms, danceability, energy, key, loudness, mode, speeechiness, acousticness, instrumentalness, liveness, valence , and tempo. From there we grouped the data by artist names and filtered out artists that had less than 50 songs. We summarized the popularity of those artists and arranged by popularity. Finally slicing to show only the top 15 artists. $\\$
+
+Now that we could see the top most popular 15 artists based off all their songs and they had to produce more that 50 songs, we created dataset3. We took those artists names from dataset2 and looked into dataset1_clean to take all the predictor information for those artists. We then filtered out the songs with artists conjoined to another artist by a semicolon to avoid counting a song for an artist that they were only featured on. $\\$
+
+We did some similar methods for cleaning the data on dataset4 and dataset5, but this was to split the data for training and testing for logistic regression.
+ $\\$
+The large amount of data was difficult to deal with at first and in trying to figure out ways to clean the data took large amounts of time to compile and run. $\\$
+
+# Modeling Introduction 
+
+Initially we tried to write a generalized additive model, but we had not cleaned the data in a way that would work with a logistic regression. After completing some research and seemed that k nearest neighbor models we had found could be applied to our data as well (towardsdatascience). It “is a data classification method for estimating the likelihood that a data point will become a member of one group or another based on what group the data points nearest to it belong to.” (towardsdatascience). It sounded like the best way to classify songs by artists. So, we take a set of songs that a user had listened to and compute the mean in each category/row. Then we input the averaged vector in k nearest neighbor model. The goal of using the k nearest neighbors is to accept this averaged vector of characteristics of a set of songs that a Spotify user had listened to and compute which of the artists is the most compatible with their previous preferences, i.e. compute the nearest neighbor (artist) to the input. This way we create a “you-might-also-like” artist suggestion. After cleaning our data correctly, that fixed the logistic regression as well. $\\$
+
+With the logistic regression we implemented a generalized additive model. It can be very easily interpreted and does not require much data manipulation. It is not as strict as a linear regression and allows for more complex relationships between predictors and response. $\\$
+
+K-nearest neighbors started its implementation by randomly sampling 66% of the dataset3. We normalize the predictors with a function labeled ‘nor’ and put that into a data frame. With those normalized values we can split that into training data and testing data. We create a category just using the response variable of ‘artist’. We run the knn() function on that information of the training and testing data without the response variable and use the response variable as the class with only k equal to 1. A for loop with k up to 40 was create, but as k increased the accuracy went down drastically. By then taking the sum of the diagonal over the sum of the rows we are able to create an accuracy rating that ranged between 60% and 75%, depending on how the data was randomly split. $\\$
+
+A generalized additive model was used as the predictive model for the project. We decided to run this on the artist ‘Nirvana’. By starting with a generalized additive model on all predictors of the data except for explicit we were able to get a log error of 0.000459. We did run the unique function of the predictions and it was giving both trues and falses. We applied the s function to each quantitative predictor and from the concluded mode had the highest p-value so we took that predictor out first. It was the only categorical predictor in the model fit. Next valence was taken out. This made sense because valence is the upbeat or how happy the song sounds and ‘Nirvana’ is not known for being happy. Next speechiness was taken out and lastly, liveness. Another error was taken now at 0.0002295, almost half of the previous error. $\\$
+
+One of the limitations of my implementation was in picking the top 15 most popular artists. Popular artists could have many overlapping points, compared to picking the 15 least popular artists, our accuracy would go up. I initially had picked the least 15 popular artists and got an accuracy of 96%. A specific limitation of fitting a generalized linear model is that it will most likely be overfitting the data. $\\$
+
+# Analysis results 
+
+```{r}
+tab <- matrix(c('0.000459','0.60 - 0.75'), ncol=1,byrow=TRUE)
+colnames(tab) <- c('Error Rate')
+rownames(tab) <- c('GAM','KNN')
+
+tab <- as.table(tab)
+knitr::kable(tab)
+```
+# Discussion of Final Models and Analysis
+
+As part of my final model for knn I used a random song (Sara Barellies-Love Song) 
+and knn predicted an artist similar is Nirvana, which might actually be accurate.
+
+
+# Conclusions
+
+From this project I have learned much more about k nearest neighbors and how
+to implement it. I think it will be a very helpful model in the future of my 
+data analystics career. I learned some new functions for helping to clean data. 
+I learned the theory behind k nearest neighbors as well and the dimentionality of my 
+project.The modeling of spotify music I wonder if it is also based off of a k nearest
+neighbor model. The generalized additive model helped to provide additonal reasoning
+behind the k nearest neighbors conclusions. 
+
+By ensuring the artists are coming from different genres would improve the accuracy, but the initial genres that came with the dataset were inaccurate. By the end of the winter break I hope to create a machine learning that will take a song and recommend 10 other songs for the user
+
+
+```{r}
+dataset1 <- read.csv("~/Desktop/dataset.csv")
+```
+
+```{r}
+dataset1_clean <- dataset1 %>% 
+  select(1:20) %>%
+  mutate(names = str_replace_all(artists, '\\s', '_') ) %>%
+  mutate(album = str_replace_all(album_name, '\\s', '_') ) 
+
+dataset1_clean$explicit <- as.integer(factor(dataset1_clean$explicit))
+
+dataset1_clean$names <- factor(dataset1_clean$names, 
+                      levels = rev(unique(dataset1_clean$names)))
+
+dataset1_clean$album <- factor(dataset1_clean$album, 
+                      levels = rev(unique(dataset1_clean$album)))
+
+## all my data from spotify dataset from kaggle. 
+#https://www.kaggle.com/datasets/maharshipandya/-spotify-tracks-dataset?resource=download
+
+dataset2 <- dataset1_clean %>%
+  select(6:19,21) %>%
+  group_by(names) %>%
+  filter( n() > 50 ) %>% # making sure those artists have atleast 50 songs
+  summarise(mean_popularity=mean(popularity),.groups = 'drop') %>%
+  arrange(mean_popularity) %>%
+  slice(168:182)
+#I'm using this data set for my knn by taking the most popular artists by averaging all
+#of their songs by popularity 
+
+
+dataset3 <- subset(dataset1_clean, names %in% dataset2$names)
+dataset3 <- dataset3 %>%
+  select(6,7,9:19,21) %>%
+  filter(!grepl(';', names)) 
+dataset3
+# I'm selecting all the information for those 50 artists 
+# Also taking out songs that have other artists on their songs 
+
+# doing similar steps as knn but this time selecting data for 
+# logistic regression
+
+dataset4 <- dataset1_clean %>%
+  select(6:19,21) %>%
+  group_by(names) %>%
+  filter( n() > 2 ) %>% # making sure those artists have atleast 2 songs
+  summarise(mean_popularity=mean(popularity),.groups = 'drop') %>%
+  arrange(mean_popularity) %>%
+  filter(!grepl(';', names)) 
+
+dataset5 <- subset(dataset1_clean, names %in% dataset4$names)
+music.train = dataset5[1:50824,]
+music.test = dataset5[50824:nrow(dataset5),]
+
+```
+
+```{r}
+fit.log = gam(I(names=="Nirvana") ~ popularity+duration_ms+danceability+energy+
+                key+loudness+mode+speechiness+acousticness+instrumentalness+
+                liveness+valence+tempo, family="binomial", 
+              data=music.train, method="REML")
+summary(fit.log)
+```
+
+```{r}
+fit.log.preds = predict(fit.log, newdata=music.test,type="response")
+fit.log.preds = ifelse(fit.log.preds > 0.5,1,0)
+log.error = mean(fit.log.preds != I(music.test$names=="Nirvana"))
+log.error
+
+unique(fit.log.preds)
+```
+
+
+```{r}
+fit.gam = gam(I(names=="Nirvana") ~ s(popularity)+s(duration_ms)+s(danceability)+
+                s(energy)+s(key)+s(loudness)+mode+s(speechiness)+
+                s(acousticness)+s(instrumentalness)+
+                s(liveness)+s(valence)+s(tempo), family="binomial", 
+              data=music.train, method="REML")
+summary(fit.gam)
+```
+
+
+```{r}
+# taking out mode
+fit.gam = gam(I(names=="Nirvana") ~ s(popularity)+s(duration_ms)+s(danceability)+
+                s(energy)+s(key)+s(loudness)+s(speechiness) +
+                s(acousticness)+s(instrumentalness)+
+                s(liveness)+s(valence)+s(tempo), family="binomial", 
+              data=music.train, method="REML")
+summary(fit.gam)
+```
+
+
+```{r}
+# taking out valence
+fit.gam = gam(I(names=="Nirvana") ~ s(popularity)+s(duration_ms)+s(danceability)+
+                s(energy)+s(key)+s(loudness)+s(speechiness) +
+                s(acousticness)+s(instrumentalness)+
+                s(liveness)+s(tempo), family="binomial", 
+              data=music.train, method="REML")
+summary(fit.gam)
+```
+
+```{r}
+# taking out speechiness
+fit.gam = gam(I(names=="Nirvana") ~ s(popularity)+s(duration_ms)+s(danceability)+
+                s(energy)+s(key)+s(loudness)+
+                s(acousticness)+s(instrumentalness)+
+                s(liveness)+s(tempo), family="binomial", 
+              data=music.train, method="REML")
+summary(fit.gam)
+```
+
+```{r}
+# taking out liveness
+fit.gam = gam(I(names=="Nirvana") ~ s(popularity)+s(duration_ms)+s(danceability)+
+                s(energy)+s(key)+s(loudness)+
+                s(acousticness)+s(instrumentalness)+
+                s(tempo), family="binomial", 
+              data=music.train, method="REML")
+summary(fit.gam)
+```
+
+```{r}
+p <- predict(fit.gam, dataset5, type = "link", se.fit = TRUE)
+upr <- p$fit + (2 * p$se.fit)
+lwr <- p$fit - (2 * p$se.fit)
+upr <- fit.gam$family$linkinv(upr)
+lwr <- fit.gam$family$linkinv(lwr)
+```
+
+I ran a confidence interval on the GAM model, but will not include in the final
+since it is a very large array of values. The confidence intervals is taking every 
+song and giving a prediction interval based on the model for Nirvana. So it will not be
+very accurate. 
+
+```{r}
+fit.gam.preds = predict(fit.gam, newdata=music.test,type="response")
+fit.gam.preds = ifelse(fit.gam.preds > 0.5,1,0)
+gam.error = mean(fit.gam.preds != I(music.test$names=="Nirvana"))
+gam.error
+
+unique(fit.gam.preds)
+```
+
+```{r}
+ ran <- sample(1:nrow(dataset3), 0.66 * nrow(dataset3)) 
+ 
+ ##the normalization function is created
+ nor <-function(x) { (x -min(x))/(max(x)-min(x))   }
+ 
+ ##Run nomalization on first 13 columns of dataset because they are the predictors
+ music_norm <- as.data.frame(lapply(dataset3[,c(1,2,3,4,5,6,7,8,9,10,11,12,13)], nor))
+ summary(dataset3)
+ summary(music_norm)
+ 
+ 
+music_train <- music_norm[ran,] 
+##extract testing set
+music_test <- music_norm[-ran,] 
+##extract 14th column of train dataset because it will be used as 'cl' argument in knn function.
+music_target_category <- dataset3[ran, 14]
+##extract 14th column of test data set to measure the accuracy
+music_test_category <- dataset3[-ran, 14]
+##load the package class
+ 
+ library(class) ##run knn function
+
+accuracy <- function(x){sum(diag(x)/(sum(rowSums(x)))) * 100 }
+
+
+
+  pr <- knn(music_train, music_test, cl=music_target_category,k=1)
+   ##create confusion matrix
+tab <- table(pr, music_test_category)
+accuracy(tab)
+```
+
+```{r}
+mytest<- music_norm[1,-14]
+mytest[1,] <- c(0.78,0.51,0.539,0.773,.182,-0.798,0,0.0117,0.0212,0.000000,0.167,0.571,0.424)
+
+
+knntestpred <- knn(music_train,mytest,music_target_category,k=1,prob=TRUE)
+knntestpred
+```
+
+
